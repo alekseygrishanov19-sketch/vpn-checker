@@ -1,32 +1,45 @@
-name: Update Proxy Keys
+name: Proxy Auto Checker
 
 on:
   schedule:
-    - cron: '0 */12 * * *' # Запуск каждые 12 часов
-  workflow_dispatch:      # Кнопка для ручного запуска
+    - cron: '0 */12 * * *'  # Запуск в 00:00 и 12:00 по UTC
+  workflow_dispatch:        # Кнопка ручного запуска в Actions
 
 jobs:
-  build:
+  run-checker:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write       # ДАЁМ ПРАВА НА ЗАПИСЬ
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0    # Загружаем всю историю для корректного пуша
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: pip install requests
 
       - name: Run Script
         run: python main.py
 
-      - name: Commit and Push results
+      - name: Push Results
         run: |
-          git config --global user.name "GitHub Actions Bot"
-          git config --global user.email "actions@github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Добавляем файлы, даже если они новые
           git add whitelist_keys.txt blacklist_keys.txt
-          git commit -m "Auto-update keys: $(date)" || echo "No changes to commit"
-          git push
+          
+          # Проверяем изменения, чтобы не падать на пустом коммите
+          if [ -n "$(git status --porcelain)" ]; then
+            git commit -m "Auto-update proxies: $(date +'%Y-%m-%d %H:%M:%S')"
+            git push origin main
+          else
+            echo "Нет изменений для коммита."
+          fi
