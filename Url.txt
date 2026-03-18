@@ -1,1 +1,1 @@
-
+dn.jsdelivr.net/gh/LowiKLive/BypassWhitelistRu@refs/heads/main/WhiteList-Bypass_Ru.txt
